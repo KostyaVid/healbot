@@ -1,22 +1,41 @@
 export var MAX_TIME_STAMP = 6000;
 export var TIME_TICK = 10;
 
-var timeM = new Array(MAX_TIME_STAMP).fill([]);
+var pause = true;
+var timeM = new Array(MAX_TIME_STAMP).fill(undefined).map(() => []);
 var currentTimeStamp = 0;
-var currentMoment;
+var currentMoment = [];
 
-export function exec(delay, callback) {
-  timeM[currentTimeStamp + delay * TIME_TICK].push(callback);
+export function start() {
+  pause = false;
 }
 
-function execAllWorks() {
-  currentMoment.forEach((callback) => callback());
+export function stop() {
+  pause = true;
+}
+
+export function exec(delay, callback) {
+  if (delay >= MAX_TIME_STAMP * TIME_TICK) {
+    throw Error("Delay is too long");
+  }
+
+  var innerDelay = currentTimeStamp + Math.ceil(delay / TIME_TICK);
+
+  if (innerDelay >= MAX_TIME_STAMP) {
+    innerDelay -= MAX_TIME_STAMP;
+  }
+
+  timeM[innerDelay].push(callback);
 }
 
 setInterval(() => {
+  if (pause) {
+    return;
+  }
+
   ++currentTimeStamp;
 
-  if (currentTimeStamp > MAX_TIME_STAMP) {
+  if (currentTimeStamp === MAX_TIME_STAMP) {
     currentTimeStamp = 0;
   }
 
@@ -24,7 +43,11 @@ setInterval(() => {
 
   execAllWorks();
 
-  timeM[currentTimeStamp] = [];
-}, 10);
+  currentMoment = [];
 
-export default timeM;
+  timeM[currentTimeStamp] = [];
+}, TIME_TICK);
+
+function execAllWorks() {
+  currentMoment.forEach((callback) => callback());
+}
